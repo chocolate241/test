@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      border: 5px solid #333;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="score">Score: 0</div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const blockSize = 30;
+    const numRows = 30;
+    const numCols = 60;
+    canvas.width = numCols * blockSize;
+    canvas.height = numRows * blockSize;
+
+    const snake = [
+      { x: 2, y: 2 },
+    ];
+
+    let food = { x: 5, y: 5 };
+    let score = 0;
+
+    let direction = "right";
+    let lastTime = 0;
+    let speed = 9; // Adjust this value to control speed
+
+    function drawSnake() {
+      ctx.fillStyle = "green";
+      for (const segment of snake) {
+        ctx.fillRect(segment.x * blockSize, segment.y * blockSize, blockSize, blockSize);
+      }
+    }
+
+    function drawFood() {
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x * blockSize, food.y * blockSize, blockSize, blockSize);
+    }
+
+    function drawScore() {
+      ctx.fillStyle = "white";
+      ctx.font = "20px Arial";
+      ctx.fillText("Score: " + score, 10, 20);
+    }
+
+    function update(time) {
+      const elapsed = time - lastTime;
+
+      if (elapsed > 1000 / speed) {
+        lastTime = time;
+
+        const head = { ...snake[0] };
+
+        switch (direction) {
+          case "up":
+            head.y--;
+            break;
+          case "down":
+            head.y++;
+            break;
+          case "left":
+            head.x--;
+            break;
+          case "right":
+            head.x++;
+            break;
+        }
+
+        // Wrap from right to left
+        if (head.x >= numCols) head.x = 0;
+        // Wrap from left to right
+        if (head.x < 0) head.x = numCols - 1;
+        // Wrap from bottom to top
+        if (head.y >= numRows) head.y = 0;
+        // Wrap from top to bottom
+        if (head.y < 0) head.y = numRows - 1;
+
+        // Check if the head collides with the body
+        for (const segment of snake) {
+          if (head.x === segment.x && head.y === segment.y) {
+            // Game over logic
+            alert("Game Over! Your Score: " + score);
+            resetGame();
+            return;
+          }
+        }
+
+        snake.unshift(head);
+
+        if (head.x === food.x && head.y === food.y) {
+          // Snake ate the food
+          generateFood();
+          score++;
+        } else {
+          snake.pop();
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawSnake();
+        drawFood();
+        drawScore();
+      }
+
+      requestAnimationFrame((time) => update(time));
+    }
+
+    function generateFood() {
+      food = {
+        x: Math.floor(Math.random() * numCols),
+        y: Math.floor(Math.random() * numRows),
+      };
+
+      // Ensure the food does not appear on the snake
+      for (const segment of snake) {
+        if (food.x === segment.x && food.y === segment.y) {
+          generateFood();
+          return;
+        }
+      }
+    }
+
+    function resetGame() {
+      snake.length = 1;
+      snake[0] = { x: 2, y: 2 };
+      direction = "right";
+      score = 0;
+      generateFood();
+    }
+
+    document.addEventListener("keydown", function (event) {
+      switch (event.code) {
+        case "ArrowUp":
+          if (direction !== "down") direction = "up";
+          break;
+        case "ArrowDown":
+          if (direction !== "up") direction = "down";
+          break;
+        case "ArrowLeft":
+          if (direction !== "right") direction = "left";
+          break;
+        case "ArrowRight":
+          if (direction !== "left") direction = "right";
+          break;
+      }
+    });
+
+    generateFood(); // Initial food generation
+    update(0); // Start the game loop
+  </script>
+</body>
+</html>
